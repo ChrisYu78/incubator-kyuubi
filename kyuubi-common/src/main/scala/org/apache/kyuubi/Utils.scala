@@ -50,12 +50,16 @@ object Utils extends Logging {
   }
 
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): Option[File] = {
+    getPropertiesFile(KYUUBI_CONF_FILE_NAME, env)
+  }
+
+  def getPropertiesFile(fileName: String, env: Map[String, String] = sys.env): Option[File] = {
     env.get(KYUUBI_CONF_DIR)
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "conf"))
-      .map(d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
+      .map(d => new File(d + File.separator + fileName))
       .filter(_.exists())
       .orElse {
-        Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
+        Option(getClass.getClassLoader.getResource(fileName)).map { url =>
           new File(url.getFile)
         }.filter(_.exists())
       }
