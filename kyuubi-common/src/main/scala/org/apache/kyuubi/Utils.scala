@@ -50,12 +50,16 @@ object Utils extends Logging {
   }
 
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): Option[File] = {
+    getPropertiesFile(KYUUBI_CONF_FILE_NAME, env)
+  }
+
+  def getPropertiesFile(fileName: String, env: Map[String, String] = sys.env): Option[File] = {
     env.get(KYUUBI_CONF_DIR)
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "conf"))
-      .map(d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
+      .map(d => new File(d + File.separator + fileName))
       .filter(_.exists())
       .orElse {
-        Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
+        Option(Utils.getContextOrKyuubiClassLoader.getResource(fileName)).map { url =>
           new File(url.getFile)
         }.filter(_.exists())
       }
@@ -314,6 +318,21 @@ object Utils extends Logging {
   }
 
   def isCommandAvailable(cmd: String): Boolean = s"which $cmd".! == 0
+
+  /**
+   * Get the ClassLoader which loaded Kyuubi.
+   */
+  def getKyuubiClassLoader: ClassLoader = getClass.getClassLoader
+
+  /**
+   * Get the Context ClassLoader on this thread or, if not present, the ClassLoader that
+   * loaded Kyuubi.
+   *
+   * This should be used whenever passing a ClassLoader to Class.ForName or finding the currently
+   * active loader when setting up ClassLoader delegation chains.
+   */
+  def getContextOrKyuubiClassLoader: ClassLoader =
+    Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
 
   def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
 }
