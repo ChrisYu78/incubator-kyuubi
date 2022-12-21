@@ -62,6 +62,10 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
           checkDatabaseName(i.tableName.database, "AlterTableAddPartitionCommand")
         case i @ AlterTableRenamePartitionCommand(_, _, _) =>
           checkDatabaseName(i.tableName.database, "AlterTableRenamePartitionCommand")
+        case i @ AlterTableRenameCommand(_, _, _) =>
+          checkDatabaseName(i.newName.database, "AlterTableRenameCommand")
+        case i @ AlterTableAddColumnsCommand(_, _) =>
+          checkDatabaseName(i.table.database, "AlterTableAddColumnsCommand")
         case i @ AlterTableDropPartitionCommand(_, _, _, _, _) =>
           checkDatabaseName(i.tableName.database, "AlterTableDropPartitionCommand")
         case i @ RepairTableCommand(_, _, _, _) =>
@@ -76,6 +80,10 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
           checkDatabaseName(
             Option(i.catalogTable.get.database),
             "InsertIntoHadoopFsRelationCommand")
+        case i @ TruncateTableCommand(_, _) =>
+          checkDatabaseName(i.tableName.database, "TruncateTableCommand")
+        case i @ LoadDataCommand(_, _, _, _, _) =>
+          checkDatabaseName(i.table.database, "LoadDataCommand")
         case _ => Unit
       }
     }

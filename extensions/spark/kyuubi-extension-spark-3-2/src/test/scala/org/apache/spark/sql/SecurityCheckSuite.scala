@@ -43,18 +43,18 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
         sql("show tables in default").collect()
         sql("show tables in tmp_yuqi").collect()
         // val df22 = sql("DROP TABLE tmp_yuqi.test")
-        intercept[RuntimeException](sql("DROP TABLE test2"))
+        intercept[RuntimeException](sql("DROP TABLE default.test2"))
         sql("insert into tmp_yuqi.test partition(p = 1) select 999 ").collect()
         sql("create table tmp_yuqi.test999 as select * from tmp_yuqi.test ").collect()
         sql("select * from tmp_yuqi.test999").collect()
-        intercept[RuntimeException](sql("insert into test2 partition(p = 1) select 999 ").collect())
+        intercept[RuntimeException](sql("insert into default.test2 partition(p = 1) select 999 "))
       }
     }
   }
 
   test("create or drop databases") {
     withSQLConf(KyuubiSQLConf.SECURITY_CHECK.key -> "true") {
-      sql("Create DATABASE tmp_yuqi")
+      sql("Create DATABASE tmp_yuqi999")
       sql("Create DATABASE tmp_yuqi2")
       sql("Create DATABASE tmp_yuqi3")
       print(sql("show databases").collect().length + "\n")
@@ -63,7 +63,6 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
       sql("DROP DATABASE  IF EXISTS tmp_yuqi")
       sql("drop DATABASE tmp_yuqi2")
       print(sql("show databases").collect().length + "\n")
-      sql("Create DATABASE hhahah")
     }
   }
 }
