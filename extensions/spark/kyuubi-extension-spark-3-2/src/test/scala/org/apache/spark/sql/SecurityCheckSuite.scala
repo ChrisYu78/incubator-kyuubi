@@ -31,7 +31,12 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
       //      assert(command.databaseName == "tmp_yuqi")
 
       // drop nonexistent PARTITION
+
+      intercept[RuntimeException](
+        sql("CREATE TABLE test3 like test2").collect())
       sql("Create DATABASE tmp_yuqi").collect()
+      sql("use tmp_yuqi")
+      sql("CREATE TABLE test6 like default.test2")
       sql("show databases").collect()
       withTable("test") {
         sql("CREATE TABLE IF NOT EXISTS tmp_yuqi.test(i int) PARTITIONED BY (p int)")

@@ -36,6 +36,14 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
           checkDatabaseName(Option(i.databaseName), "DropDatabaseCommand")
         case i @ CreateTableCommand(_, _) =>
           checkDatabaseName(Option(i.table.database), "CreateTableCommand")
+        case i @ CreateTableLikeCommand(_, _, _, _, _, _) =>
+          checkDatabaseName(i.targetTable.database, "CreateTableLikeCommand")
+        case i @ CreateHiveTableAsSelectCommand(_, _, _, _) =>
+          checkDatabaseName(Option(i.tableDesc.database), "CreateHiveTableAsSelectCommand")
+        case i @ OptimizedCreateHiveTableAsSelectCommand(_, _, _, _) =>
+          checkDatabaseName(Option(i.tableDesc.database), "OptimizedCreateHiveTableAsSelectCommand")
+        case i @ CreateDataSourceTableAsSelectCommand(_, _, _, _) =>
+          checkDatabaseName(Option(i.table.database), "CreateDataSourceTableAsSelectCommand")
         case i @ DropTableCommand(_, _, _, _) =>
           checkDatabaseName(i.tableName.database, "DropTableCommand")
         case i @ AlterDatabaseSetLocationCommand(_, _) =>
@@ -64,16 +72,10 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
           checkDatabaseName(i.databaseName, "DropFunctionCommand")
         case i @ InsertIntoHiveTable(_, _, _, _, _, _) =>
           checkDatabaseName(Option(i.table.database), "InsertIntoHiveTable")
-        case i @ CreateHiveTableAsSelectCommand(_, _, _, _) =>
-          checkDatabaseName(Option(i.tableDesc.database), "CreateHiveTableAsSelectCommand")
-        case i @ OptimizedCreateHiveTableAsSelectCommand(_, _, _, _) =>
-          checkDatabaseName(Option(i.tableDesc.database), "OptimizedCreateHiveTableAsSelectCommand")
         case i @ InsertIntoHadoopFsRelationCommand(_, _, _, _, _, _, _, _, _, _, _, _) =>
           checkDatabaseName(
             Option(i.catalogTable.get.database),
             "InsertIntoHadoopFsRelationCommand")
-        case i @ CreateDataSourceTableAsSelectCommand(_, _, _, _) =>
-          checkDatabaseName(Option(i.table.database), "CreateDataSourceTableAsSelectCommand")
         case _ => Unit
       }
     }
@@ -83,10 +85,12 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
       databaseName: Option[String],
       commandName: String) = {
     val specifiedDatabasePrefix = conf.getConf(SPECIFIED_DATABASE_PREFIX)
-    if (!databaseName.get.startsWith(specifiedDatabasePrefix)) {
+    val currentDatabase = session.sessionState.catalog.getCurrentDatabase
+    val dbName = databaseName.getOrElse(currentDatabase)
+    if (!dbName.startsWith(specifiedDatabasePrefix)) {
       throw new RuntimeException(
-        s"The current command type[$commandName] is not allowed " +
-          s"in databases with prefixes other than `$specifiedDatabasePrefix`")
+        s"The command[$commandName] is not allowed execution " +
+          s"in database[$dbName] with prefixes other than `$specifiedDatabasePrefix`")
     }
   }
 }
