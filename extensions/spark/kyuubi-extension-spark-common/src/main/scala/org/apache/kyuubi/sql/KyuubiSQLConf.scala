@@ -160,4 +160,19 @@ object KyuubiSQLConf {
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SECURITY_CHECK =
+    buildConf("spark.sql.check.securityCheck")
+      .doc("spark.sql.check.securityCheck")
+      .version("1.6.1")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SPECIFIED_DATABASE_PREFIX =
+    buildConf("spark.sql.check.specifiedDatabasePrefix")
+      .doc("spark.sql.check.specifiedDatabasePrefix")
+      .version("1.6.1")
+      .stringConf
+      .transform(_.toLowerCase)
+      .createWithDefault("tmp_yuqi")
 }
