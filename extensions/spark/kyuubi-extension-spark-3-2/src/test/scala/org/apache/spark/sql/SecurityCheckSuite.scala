@@ -32,7 +32,7 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
 
       // drop nonexistent PARTITION
 
-      intercept[RuntimeException](
+      intercept[IllegalAccessException](
         sql("CREATE TABLE test3 like test2").collect())
       sql("Create DATABASE tmp_yuqi").collect()
       sql("use tmp_yuqi")
@@ -43,11 +43,12 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
         sql("show tables in default").collect()
         sql("show tables in tmp_yuqi").collect()
         // val df22 = sql("DROP TABLE tmp_yuqi.test")
-        intercept[RuntimeException](sql("DROP TABLE default.test2"))
+        intercept[IllegalAccessException](sql("DROP TABLE default.test2"))
         sql("insert into tmp_yuqi.test partition(p = 1) select 999 ").collect()
         sql("create table tmp_yuqi.test999 as select * from tmp_yuqi.test ").collect()
         sql("select * from tmp_yuqi.test999").collect()
-        intercept[RuntimeException](sql("insert into default.test2 partition(p = 1) select 999 "))
+        intercept[IllegalAccessException](
+          sql("insert into default.test2 partition(p = 1) select 999 "))
       }
     }
   }
@@ -58,7 +59,7 @@ class SecurityCheckSuite extends KyuubiSparkSQLExtensionTest {
       sql("Create DATABASE tmp_yuqi2")
       sql("Create DATABASE tmp_yuqi3")
       print(sql("show databases").collect().length + "\n")
-      intercept[RuntimeException](
+      intercept[IllegalAccessException](
         sql("Create DATABASE hhahah"))
       sql("DROP DATABASE  IF EXISTS tmp_yuqi")
       sql("drop DATABASE tmp_yuqi2")

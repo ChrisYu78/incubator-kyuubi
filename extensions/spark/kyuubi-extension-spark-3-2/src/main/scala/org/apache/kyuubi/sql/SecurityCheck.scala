@@ -30,6 +30,12 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
   override def apply(plan: LogicalPlan): Unit = {
     if (conf.getConf(SECURITY_CHECK)) {
       plan match {
+        case i @ InsertIntoHiveTable(_, _, _, _, _, _) =>
+          checkDatabaseName(Option(i.table.database), "InsertIntoHiveTable")
+        case i @ InsertIntoHadoopFsRelationCommand(_, _, _, _, _, _, _, _, _, _, _, _) =>
+          checkDatabaseName(
+            Option(i.catalogTable.get.database),
+            "InsertIntoHadoopFsRelationCommand")
         case i @ CreateDatabaseCommand(_, _, _, _, _) =>
           checkDatabaseName(Option(i.databaseName), "CreateDatabaseCommand")
         case i @ DropDatabaseCommand(_, _, _) =>
@@ -74,12 +80,6 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
           checkDatabaseName(i.tableName.database, "AlterTableSetLocationCommand")
         case i @ DropFunctionCommand(_, _, _, _) =>
           checkDatabaseName(i.databaseName, "DropFunctionCommand")
-        case i @ InsertIntoHiveTable(_, _, _, _, _, _) =>
-          checkDatabaseName(Option(i.table.database), "InsertIntoHiveTable")
-        case i @ InsertIntoHadoopFsRelationCommand(_, _, _, _, _, _, _, _, _, _, _, _) =>
-          checkDatabaseName(
-            Option(i.catalogTable.get.database),
-            "InsertIntoHadoopFsRelationCommand")
         case i @ TruncateTableCommand(_, _) =>
           checkDatabaseName(i.tableName.database, "TruncateTableCommand")
         case i @ LoadDataCommand(_, _, _, _, _) =>
@@ -96,7 +96,7 @@ case class SecurityCheck(session: SparkSession) extends (LogicalPlan => Unit)
     val currentDatabase = session.sessionState.catalog.getCurrentDatabase
     val dbName = databaseName.getOrElse(currentDatabase)
     if (!dbName.startsWith(specifiedDatabasePrefix)) {
-      throw new RuntimeException(
+      throw new IllegalAccessException(
         s"The command[$commandName] is not allowed execution " +
           s"in database[$dbName] with prefixes other than `$specifiedDatabasePrefix`")
     }
